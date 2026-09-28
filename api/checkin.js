@@ -1,7 +1,7 @@
 import { Redis } from '@upstash/redis';
 
 const redis = Redis.fromEnv();
-const GUESTS_KEY = 'wedding_checkin_guests_v1';
+const GUESTS_KEY = 'wedding_checkin_guests_v2';
 
 function normalizeGuest(guest) {
   return {
@@ -17,34 +17,23 @@ function normalizeGuest(guest) {
   };
 }
 
-function decodeGuests(hash) {
-  if (!hash || typeof hash !== 'object') return [];
-  return Object.values(hash)
-    .map((value) => {
-      try {
-        return typeof value === 'string' ? JSON.parse(value) : value;
-      } catch {
-        return null;
-      }
-    })
-    .filter(Boolean)
-    .sort((a, b) => Number(a.id) - Number(b.id));
+function normalizeGuestList(guests) {
+  if (!Array.isArray(guests)) return [];
+  return guests
+    .map(normalizeGuest)
+    .filter((g) => g.id && g.name && g.table >= 1 && g.table <= 23)
+    .sort((a, b) => a.id - b.id);
 }
 
-async function writeAllGuests(guests) {
-  await redis.del(GUESTS_KEY);
-  if (!guests.length) return;
+async function readGuests() {
+  const value = await redis.get(GUESTS_KEY);
+  return normalizeGuestList(Array.isArray(value) ? value : []);
+}
 
-  const payload = {};
-  for (const guest of guests) {
-    const normalized = normalizeGuest(guest);
-    if (!normalized.id || !normalized.name || !normalized.table) continue;
-    payload[String(normalized.id)] = JSON.stringify(normalized);
-  }
-
-  if (Object.keys(payload).length) {
-    await redis.hset(GUESTS_KEY, payload);
-  }
+async function writeGuests(guests) {
+  const normalized = normalizeGuestList(guests);
+  await redis.set(GUESTS_KEY, normalized);
+  return normalized;
 }
 
 export default async function handler(req, res) {
@@ -52,8 +41,8 @@ export default async function handler(req, res) {
 
   try {
     if (req.method === 'GET') {
-      const hash = await redis.hgetall(GUESTS_KEY);
-      return res.status(200).json({ guests: decodeGuests(hash) });
+      const guests = await readGuests();
+      return res.status(200).json({ guests });
     }
 
     if (req.method === 'POST') {
@@ -61,37 +50,39 @@ export default async function handler(req, res) {
 
       if (action === 'upsert') {
         const guest = normalizeGuest(req.body?.guest || {});
-        if (!guest.id || !guest.name || !guest.table) {
+        if (!guest.id || !guest.name || guest.table < 1 || guest.table > 23) {
           return res.status(400).json({ error: '賓客資料不完整' });
         }
 
-        await redis.hset(GUESTS_KEY, {
-          [String(guest.id)]: JSON.stringify(guest),
-        });
+        const guests = await readGuests();
+        const index = guests.findIndex((item) => item.id === guest.id);
 
-        return res.status(200).json({ guest });
+        if (index >= 0) guests[index] = guest;
+        else guests.push(guest);
+
+        const saved = await writeGuests(guests);
+        return res.status(200).json({ guest, guests: saved });
       }
 
       if (action === 'replaceAll') {
-        const guests = Array.isArray(req.body?.guests) ? req.body.guests : null;
-        if (!guests) {
+        const incoming = req.body?.guests;
+        if (!Array.isArray(incoming)) {
           return res.status(400).json({ error: '缺少賓客資料' });
         }
 
-        await writeAllGuests(guests);
-        return res.status(200).json({ guests: guests.map(normalizeGuest) });
+        const guests = await writeGuests(incoming);
+        return res.status(200).json({ guests });
       }
 
       if (action === 'init') {
-        const guests = Array.isArray(req.body?.guests) ? req.body.guests : [];
-        const count = await redis.hlen(GUESTS_KEY);
-
-        if (count === 0 && guests.length) {
-          await writeAllGuests(guests);
+        const current = await readGuests();
+        if (current.length) {
+          return res.status(200).json({ guests: current });
         }
 
-        const hash = await redis.hgetall(GUESTS_KEY);
-        return res.status(200).json({ guests: decodeGuests(hash) });
+        const incoming = Array.isArray(req.body?.guests) ? req.body.guests : [];
+        const guests = await writeGuests(incoming);
+        return res.status(200).json({ guests });
       }
 
       return res.status(400).json({ error: '未知的操作' });
@@ -101,6 +92,9 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   } catch (error) {
     console.error('Wedding check-in API error:', error);
-    return res.status(500).json({ error: '雲端同步失敗' });
+    return res.status(500).json({
+      error: '雲端同步失敗',
+      detail: process.env.NODE_ENV === 'development' ? String(error?.message || error) : undefined,
+    });
   }
 }
