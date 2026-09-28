@@ -1,7 +1,29 @@
 import { Redis } from '@upstash/redis';
 
-const redis = Redis.fromEnv();
+const redisUrl =
+  process.env.UPSTASH_REDIS_REST_URL ||
+  process.env.KV_REST_API_URL ||
+  process.env.KV_URL;
+
+const redisToken =
+  process.env.UPSTASH_REDIS_REST_TOKEN ||
+  process.env.KV_REST_API_TOKEN ||
+  process.env.KV_REST_API_READ_ONLY_TOKEN;
+
 const GUESTS_KEY = 'wedding_checkin_guests_v2';
+
+function getRedis() {
+  if (!redisUrl || !redisToken) {
+    throw new Error(
+      'REDIS_ENV_MISSING: 請確認 Vercel 專案已注入 UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN，或 KV_REST_API_URL / KV_REST_API_TOKEN'
+    );
+  }
+
+  return new Redis({
+    url: redisUrl,
+    token: redisToken,
+  });
+}
 
 function normalizeGuest(guest) {
   return {
@@ -25,12 +47,12 @@ function normalizeGuestList(guests) {
     .sort((a, b) => a.id - b.id);
 }
 
-async function readGuests() {
+async function readGuests(redis) {
   const value = await redis.get(GUESTS_KEY);
   return normalizeGuestList(Array.isArray(value) ? value : []);
 }
 
-async function writeGuests(guests) {
+async function writeGuests(redis, guests) {
   const normalized = normalizeGuestList(guests);
   await redis.set(GUESTS_KEY, normalized);
   return normalized;
@@ -40,9 +62,14 @@ export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
 
   try {
+    const redis = getRedis();
+
     if (req.method === 'GET') {
-      const guests = await readGuests();
-      return res.status(200).json({ guests });
+      const guests = await readGuests(redis);
+      return res.status(200).json({
+        guests,
+        redisConnected: true,
+      });
     }
 
     if (req.method === 'POST') {
@@ -54,13 +81,13 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: '賓客資料不完整' });
         }
 
-        const guests = await readGuests();
+        const guests = await readGuests(redis);
         const index = guests.findIndex((item) => item.id === guest.id);
 
         if (index >= 0) guests[index] = guest;
         else guests.push(guest);
 
-        const saved = await writeGuests(guests);
+        const saved = await writeGuests(redis, guests);
         return res.status(200).json({ guest, guests: saved });
       }
 
@@ -70,18 +97,18 @@ export default async function handler(req, res) {
           return res.status(400).json({ error: '缺少賓客資料' });
         }
 
-        const guests = await writeGuests(incoming);
+        const guests = await writeGuests(redis, incoming);
         return res.status(200).json({ guests });
       }
 
       if (action === 'init') {
-        const current = await readGuests();
+        const current = await readGuests(redis);
         if (current.length) {
           return res.status(200).json({ guests: current });
         }
 
         const incoming = Array.isArray(req.body?.guests) ? req.body.guests : [];
-        const guests = await writeGuests(incoming);
+        const guests = await writeGuests(redis, incoming);
         return res.status(200).json({ guests });
       }
 
@@ -92,9 +119,17 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: 'Method Not Allowed' });
   } catch (error) {
     console.error('Wedding check-in API error:', error);
+
+    const message = String(error?.message || error);
+    const isEnvError = message.includes('REDIS_ENV_MISSING');
+
     return res.status(500).json({
-      error: '雲端同步失敗',
-      detail: process.env.NODE_ENV === 'development' ? String(error?.message || error) : undefined,
+      error: isEnvError
+        ? 'Vercel 找不到 Upstash Redis 環境變數'
+        : '雲端同步失敗',
+      detail: isEnvError
+        ? message.replace('REDIS_ENV_MISSING: ', '')
+        : '請查看 Vercel Function Logs 的 /api/checkin 錯誤訊息',
     });
   }
 }
