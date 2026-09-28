@@ -1,319 +1,65 @@
-<!doctype html>
+
+<!DOCTYPE html>
 <html lang="zh-Hant">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>跨電腦同步 Todo List</title>
-  <style>
-    :root{
-      --bg:#f7f1ea;
-      --paper:#fffdf9;
-      --ink:#4a3024;
-      --muted:#9a897e;
-      --line:#e9ddd2;
-      --tea:#aa8974;
-      --tea-dark:#8c6c58;
-      --tea-light:#e7d7ca;
-      --shadow:0 18px 55px rgba(76,51,35,.10);
-    }
-    *{box-sizing:border-box}
-    body{
-      margin:0;
-      min-height:100vh;
-      color:var(--ink);
-      font-family:"PingFang TC","Microsoft JhengHei",system-ui,sans-serif;
-      background:
-        radial-gradient(circle at 15% 0%,rgba(255,255,255,.95),transparent 38%),
-        linear-gradient(135deg,#f8f3ed 0%,#f3ebe4 100%);
-      display:grid;
-      place-items:center;
-      padding:24px;
-    }
-    .app{
-      width:min(760px,100%);
-      background:rgba(255,253,249,.92);
-      border:1px solid rgba(232,222,212,.9);
-      border-radius:28px;
-      box-shadow:var(--shadow);
-      overflow:hidden;
-      backdrop-filter:blur(10px);
-    }
-    .hero{
-      padding:36px 36px 24px;
-      border-bottom:1px solid var(--line);
-      background:linear-gradient(180deg,rgba(255,255,255,.65),rgba(250,244,238,.55));
-    }
-    .eyebrow{
-      margin:0 0 8px;
-      font:600 12px/1.2 Georgia,serif;
-      letter-spacing:3px;
-      color:var(--tea);
-      text-transform:uppercase;
-    }
-    h1{
-      margin:0;
-      font-family:Georgia,"Noto Serif TC",serif;
-      font-weight:500;
-      font-size:clamp(28px,5vw,42px);
-      letter-spacing:.5px;
-    }
-    .sub{
-      margin:10px 0 0;
-      color:var(--muted);
-      font-size:14px;
-      line-height:1.7;
-    }
-    .composer{
-      display:grid;
-      grid-template-columns:1fr auto;
-      gap:12px;
-      padding:24px 36px 18px;
-    }
-    .composer input{
-      width:100%;
-      height:54px;
-      border:1px solid #dacbc0;
-      border-radius:15px;
-      background:#fff;
-      color:var(--ink);
-      padding:0 18px;
-      font-size:16px;
-      outline:none;
-      transition:.18s ease;
-      box-shadow:inset 0 1px 0 rgba(255,255,255,.7);
-    }
-    .composer input::placeholder{color:#b2a49a}
-    .composer input:focus{
-      border-color:var(--tea);
-      box-shadow:0 0 0 4px rgba(170,137,116,.12);
-    }
-    .composer button{
-      height:54px;
-      border:0;
-      border-radius:15px;
-      padding:0 22px;
-      color:white;
-      background:linear-gradient(180deg,#b3937e,#9b7862);
-      font-weight:700;
-      font-size:15px;
-      cursor:pointer;
-      box-shadow:0 8px 18px rgba(140,108,88,.22);
-      transition:.18s ease;
-    }
-    .composer button:hover{transform:translateY(-1px)}
-    .composer button:disabled{opacity:.55;cursor:not-allowed;transform:none}
-    .meta{
-      display:flex;
-      align-items:center;
-      justify-content:space-between;
-      gap:12px;
-      padding:0 36px 16px;
-      color:var(--muted);
-      font-size:13px;
-    }
-    .sync{
-      display:inline-flex;
-      align-items:center;
-      gap:8px;
-    }
-    .dot{
-      width:8px;
-      height:8px;
-      border-radius:50%;
-      background:#6d9b72;
-      box-shadow:0 0 0 4px rgba(109,155,114,.12);
-    }
-    .refresh{
-      border:0;
-      background:none;
-      color:var(--tea-dark);
-      font-weight:700;
-      cursor:pointer;
-      padding:6px 0;
-    }
-    .list{
-      padding:0 24px 28px;
-      min-height:180px;
-    }
-    .todo{
-      display:flex;
-      align-items:flex-start;
-      gap:14px;
-      margin:10px 0;
-      padding:18px 18px;
-      background:white;
-      border:1px solid #eee3da;
-      border-radius:17px;
-      box-shadow:0 7px 20px rgba(77,53,38,.05);
-    }
-    .bullet{
-      width:13px;
-      height:13px;
-      border-radius:50%;
-      margin-top:5px;
-      flex:0 0 auto;
-      background:var(--tea-light);
-      border:3px solid #c6aa97;
-    }
-    .todo-main{min-width:0}
-    .todo-text{
-      font-size:16px;
-      line-height:1.55;
-      word-break:break-word;
-    }
-    .todo-time{
-      margin-top:5px;
-      color:#aa9b91;
-      font-size:12px;
-    }
-    .empty,.error,.loading{
-      text-align:center;
-      padding:50px 20px;
-      color:var(--muted);
-    }
-    .error{color:#a05f57}
-    .footer{
-      text-align:center;
-      padding:16px 24px 24px;
-      color:#b1a198;
-      font:12px Georgia,serif;
-      letter-spacing:2px;
-    }
-    @media(max-width:600px){
-      body{padding:12px}
-      .app{border-radius:22px}
-      .hero{padding:28px 22px 20px}
-      .composer{grid-template-columns:1fr;padding:20px 22px 14px}
-      .composer button{width:100%}
-      .meta{padding:0 22px 14px}
-      .list{padding:0 14px 22px}
-    }
-  </style>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>2026/11/22 婚禮簽到</title>
+<style>
+:root{--bg:#f7f1ea;--paper:#fffdf9;--ink:#4a2f23;--muted:#8e7b70;--line:#e8ded4;--tea:#b2927d;--tea2:#d7c3b2;--cream:#f3e9df;--green:#4f925d;--gold:#efbe63;--gray:#b9b9b9;--shadow:0 7px 24px rgba(86,60,43,.08)}
+*{box-sizing:border-box} body{margin:0;background:radial-gradient(circle at 50% 0,#fffdf9 0,#f8f3ed 45%,#f3ece5 100%);color:var(--ink);font-family:"Noto Serif TC","PingFang TC","Microsoft JhengHei",serif;min-height:100vh} button,input{font:inherit} button{cursor:pointer}
+.page{width:100%;max-width:none;margin:auto;padding:clamp(8px,1vw,16px) clamp(8px,1.1vw,18px) 28px}.hero{height:88px;display:grid;grid-template-columns:1fr 1.4fr 1fr;align-items:center}.brand{font-family:cursive;font-size:35px;font-style:italic}.brand small{display:block;font-family:Georgia,serif;font-style:normal;font-size:11px;letter-spacing:4px;margin-left:75px;color:#8b6d5b}.title{text-align:center}.title h1{margin:0;font-weight:500;font-size:34px;letter-spacing:4px}.title p{margin:7px 0 0;font:13px Georgia,serif;letter-spacing:5px;color:#9a7d6c}.quote{text-align:right;font-style:italic;line-height:1.7;color:#73584a;padding-right:25px}
+.topgrid{display:grid;grid-template-columns:minmax(0,3fr) minmax(310px,1fr);gap:10px}.stats,.searchbox,.panel,.map-card,.form-card{background:rgba(255,255,255,.83);border:1px solid rgba(235,226,217,.8);box-shadow:var(--shadow);border-radius:12px}.stats{height:98px;display:grid;grid-template-columns:1fr 1fr 1fr auto;align-items:center;padding:10px 28px}.stat{height:58px;border-right:1px solid #d7c9bd;display:flex;align-items:center;justify-content:center;gap:16px}.stat:nth-child(3){border-right:0}.stat .icon{font-size:36px;color:#c8ad99}.stat strong{display:block;font-size:28px;font-weight:500}.stat span{font-size:15px}.ring{width:58px;height:58px;border-radius:50%;background:conic-gradient(var(--tea) var(--pct),#e9e0d8 0);display:grid;place-items:center;position:relative}.ring:before{content:"";position:absolute;inset:8px;border-radius:50%;background:#fff}.ring b{z-index:1;font-size:17px}.export{border:0;background:linear-gradient(#b99a84,#a98670);color:#fff;padding:15px 20px;border-radius:8px;box-shadow:0 5px 12px #cbb7a9}.searchbox{height:98px;padding:23px 18px;position:relative}.searchbox input{width:100%;height:50px;border:1px solid #d8d0ca;border-radius:25px;background:white;color:#4a3024;-webkit-text-fill-color:#4a3024;caret-color:#4a3024;padding:0 48px;font-size:16px;outline:none}.searchbox input::placeholder{color:#9b8d84;opacity:1}.searchbox .mag{position:absolute;left:34px;top:37px;font-size:22px;color:#555}.search-results{position:absolute;z-index:20;top:78px;left:18px;right:18px;background:#fff;border:1px solid var(--line);border-radius:10px;box-shadow:var(--shadow);display:none;max-height:230px;overflow:auto}.search-results div{padding:11px 16px;border-bottom:1px solid #eee;cursor:pointer}.search-results div:hover{background:#f8eee6}
+.workspace{display:grid;grid-template-columns:minmax(300px,26vw) minmax(520px,1fr) minmax(300px,25vw);gap:10px;margin-top:10px}.panel{height:clamp(560px,calc(100vh - 225px),780px);overflow:hidden;display:flex;flex-direction:column}.panel-head{height:60px;padding:0 20px;display:flex;align-items:center;justify-content:space-between;font-size:21px;border-bottom:1px solid #eee4dc}.columns,.guest{display:grid;align-items:center;grid-template-columns:32px 1.2fr .65fr .65fr .85fr .55fr;gap:4px;padding:0 14px}.columns{height:43px;color:#6f625b;font-size:13px;border-bottom:1px solid #eee}.guest{min-height:37px;border-bottom:1px solid #eee;font-size:14px}.guest:hover{background:#fbf4ee}.check{width:17px;height:17px;border-radius:50%;display:grid;place-items:center;color:#fff;background:var(--green);font-size:11px}.unchecked .columns,.unchecked .guest{grid-template-columns:32px 1.2fr .65fr .75fr .75fr}.unchecked .guest{cursor:pointer}.unchecked .guest.selected{background:#faeadb}.guest.partial .check{background:var(--gold)}.box{width:20px;height:20px;border:1px solid #c9b8aa;border-radius:4px}.list{flex:1;min-height:0;overflow:auto}.viewall{display:none}.legend{min-height:66px;padding:12px 10px 18px;display:flex;justify-content:center;align-items:center;gap:24px;font-size:13px;background:#fff}.dot{width:13px;height:13px;border-radius:50%;display:inline-block;margin-right:6px;vertical-align:-2px}
+.center{min-width:0}.map-card{padding:10px;background:#fdf9f4}.hall{width:100%;aspect-ratio:1.87/1;position:relative;border:2px solid #8e7a6b;background:#fcfaf6;overflow:hidden}.stage{position:absolute;left:6.4%;top:25.0%;width:11.2%;height:42.7%;background:#eee0d4;border-left:12px solid #a88975;display:grid;place-items:center;font-size:22px}.entrance{position:absolute;right:-1px;top:38.5%;height:31.2%;width:16px;background:#839394}.entrance-label{position:absolute;right:2.0%;top:29.0%;font-size:14px}.tables{position:absolute;inset:0}.table{position:absolute;transform:translate(-50%,-50%);width:8.0%;aspect-ratio:1;border-radius:50%;background:#eee2d7;border:1px solid #c8ab96;display:grid;place-items:center;font:18px Georgia,serif;transition:.2s}.table.main{width:9.5%;text-align:center;line-height:1.08}.table.main .main-number{font:18px Georgia,serif}.table.main .main-label{font-size:11px;font-family:inherit}.table.active{background:#f6e6cf;border-color:#e9a944;box-shadow:0 0 0 3px #fff,0 0 18px 8px rgba(244,187,82,.65)}
+.form-card{margin-top:10px;min-height:270px;padding:14px 24px;display:none}.form-card.open{display:block}.form-title{display:flex;justify-content:space-between;font-size:20px;font-weight:600;border-bottom:1px solid #eee;padding-bottom:12px}.form-grid{display:grid;grid-template-columns:1fr 1.4fr;gap:18px;padding:12px 0}.attendance{display:flex;align-items:center;gap:15px}.counter{display:flex;align-items:center;gap:18px}.roundbtn{width:38px;height:38px;border:1px solid #d6c5b8;background:#fff;border-radius:50%;font-size:23px;color:#7d6758}.roundbtn.plus{background:#b5947d;color:#fff}.money-row{display:grid;grid-template-columns:1fr auto 1.4fr;gap:16px;align-items:end}.field label{display:block;margin-bottom:6px;font-size:14px}.field input{height:45px;width:100%;border:1px solid #d8cec6;border-radius:6px;padding:0 12px;background:#fff;color:#4a3024;-webkit-text-fill-color:#4a3024;caret-color:#4a3024}.field input::placeholder{color:#a99a90;opacity:1}.field input:disabled{background:#f2ece7;color:#9b8d84;-webkit-text-fill-color:#9b8d84;opacity:1}.nogift{height:45px;display:flex;align-items:center;gap:8px;white-space:nowrap}.actions{display:grid;grid-template-columns:1fr 1.7fr;gap:14px;margin-top:15px}.actions button{height:56px;border-radius:7px;border:1px solid #b3927b;background:#fff;color:#4a3024;font-size:17px}.actions .confirm{background:#a88670;color:white}.single-note{font-size:12px;color:#9b897d;margin-top:4px}.footer{display:flex;justify-content:space-between;color:#b49a88;font:12px Georgia,serif;letter-spacing:2px;padding:22px 20px 0}.upload-btn{height:34px;border:1px solid #cbb5a5;background:#fffaf6;color:#6f5445;border-radius:7px;padding:0 11px;font-size:13px}.panel-head-actions{display:flex;align-items:center;gap:8px}.toast{position:fixed;left:50%;bottom:25px;transform:translateX(-50%);background:#4e392e;color:#fff;padding:12px 20px;border-radius:8px;opacity:0;pointer-events:none;transition:.25s}.toast.show{opacity:1}
+@media(max-width:1100px){.hero{grid-template-columns:1fr}.brand,.quote{display:none}.topgrid{grid-template-columns:1fr}.workspace{grid-template-columns:1fr}.panel{height:420px}.center{order:-1}.map-card{height:430px}.unchecked{height:450px}.stats{grid-template-columns:repeat(3,1fr) auto}.page{padding:8px}.title h1{font-size:28px}}
+@media(max-width:650px){.hero{height:72px}.title h1{font-size:22px;letter-spacing:1px}.title p{font-size:9px;letter-spacing:2px}.stats{height:auto;padding:12px;grid-template-columns:1fr 1fr}.stat{border-right:0;border-bottom:1px solid #eee;padding:8px}.export{margin:8px;grid-column:1/-1}.workspace{display:flex;flex-direction:column}.center{order:-2}.map-card{height:360px;overflow:auto}.hall{min-width:650px}.form-grid,.money-row{grid-template-columns:1fr}.actions{grid-template-columns:1fr}.panel{height:390px}.searchbox{height:78px;padding:14px}.searchbox .mag{top:29px}.search-results{top:68px}.brand{display:none}}
+</style>
 </head>
 <body>
-  <main class="app">
-    <section class="hero">
-      <p class="eyebrow">Shared Cloud Todo</p>
-      <h1>跨電腦同步待辦事項</h1>
-      <p class="sub">資料儲存在 Upstash Redis。只要開啟同一個 Vercel 網址，不同電腦與手機都會讀取同一份清單。</p>
-    </section>
-
-    <form class="composer" id="todoForm">
-      <input id="todoInput" type="text" maxlength="200" placeholder="輸入新的待辦事項…" autocomplete="off" />
-      <button id="addBtn" type="submit">＋ 新增待辦</button>
-    </form>
-
-    <div class="meta">
-      <span class="sync"><i class="dot"></i><span id="syncText">準備同步</span></span>
-      <button class="refresh" id="refreshBtn" type="button">重新整理</button>
-    </div>
-
-    <section class="list" id="todoList">
-      <div class="loading">正在讀取雲端資料…</div>
-    </section>
-
-    <div class="footer">UPSTASH REDIS × VERCEL</div>
-  </main>
-
-  <script>
-    const listEl = document.getElementById('todoList');
-    const formEl = document.getElementById('todoForm');
-    const inputEl = document.getElementById('todoInput');
-    const addBtn = document.getElementById('addBtn');
-    const refreshBtn = document.getElementById('refreshBtn');
-    const syncText = document.getElementById('syncText');
-
-    function escapeHtml(value) {
-      return String(value)
-        .replaceAll('&', '&amp;')
-        .replaceAll('<', '&lt;')
-        .replaceAll('>', '&gt;')
-        .replaceAll('"', '&quot;')
-        .replaceAll("'", '&#039;');
-    }
-
-    function formatTime(value) {
-      if (!value) return '';
-      const date = new Date(value);
-      return new Intl.DateTimeFormat('zh-TW', {
-        year: 'numeric',
-        month: '2-digit',
-        day: '2-digit',
-        hour: '2-digit',
-        minute: '2-digit'
-      }).format(date);
-    }
-
-    function renderTodos(todos) {
-      if (!Array.isArray(todos) || todos.length === 0) {
-        listEl.innerHTML = '<div class="empty">目前還沒有待辦事項 ✦</div>';
-        return;
-      }
-
-      listEl.innerHTML = todos.map(todo => `
-        <article class="todo">
-          <span class="bullet"></span>
-          <div class="todo-main">
-            <div class="todo-text">${escapeHtml(todo.text)}</div>
-            <div class="todo-time">${escapeHtml(formatTime(todo.createdAt))}</div>
-          </div>
-        </article>
-      `).join('');
-    }
-
-    async function loadTodos() {
-      syncText.textContent = '同步中…';
-      try {
-        const response = await fetch('/api/todo', { cache: 'no-store' });
-        if (!response.ok) throw new Error('讀取失敗');
-        const data = await response.json();
-        renderTodos(data.todos || []);
-        syncText.textContent = '已同步雲端資料';
-      } catch (error) {
-        console.error(error);
-        listEl.innerHTML = '<div class="error">無法讀取雲端待辦事項，請稍後再試。</div>';
-        syncText.textContent = '同步失敗';
-      }
-    }
-
-    formEl.addEventListener('submit', async (event) => {
-      event.preventDefault();
-      const text = inputEl.value.trim();
-      if (!text) {
-        inputEl.focus();
-        return;
-      }
-
-      addBtn.disabled = true;
-      addBtn.textContent = '新增中…';
-      syncText.textContent = '寫入雲端…';
-
-      try {
-        const response = await fetch('/api/todo', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ text })
-        });
-
-        const data = await response.json();
-        if (!response.ok) throw new Error(data.error || '新增失敗');
-
-        inputEl.value = '';
-        renderTodos(data.todos || []);
-        syncText.textContent = '已同步雲端資料';
-        inputEl.focus();
-      } catch (error) {
-        console.error(error);
-        alert(error.message || '新增失敗，請稍後再試');
-        syncText.textContent = '同步失敗';
-      } finally {
-        addBtn.disabled = false;
-        addBtn.textContent = '＋ 新增待辦';
-      }
-    });
-
-    refreshBtn.addEventListener('click', loadTodos);
-    loadTodos();
-  </script>
-</body>
-</html>
+<div class="page">
+<header class="hero"><div class="brand">Jay & Mona<small>OUR WEDDING DAY ♥</small></div><div class="title"><h1>2026/11/22　婚禮簽到</h1><p>WELCOME TO OUR WEDDING</p></div><div class="quote">有你們的到來<br>是我們最美好的禮物</div></header>
+<section class="topgrid"><div class="stats"><div class="stat"><div class="icon">♟</div><div><span>已報到人數</span><strong><i id="checkedCount">0</i> / <i id="totalCount">0</i> 人</strong></div></div><div class="stat"><div class="ring" id="ring" style="--pct:0%"><b id="ringText">0%</b></div><div><span>報到率</span><strong id="rate">0%</strong></div></div><div class="stat"><div class="icon">♟</div><div><span>未報到人數</span><strong id="uncheckedCount">0 人</strong></div></div><div style="display:flex;gap:8px;align-items:center"><button class="export" id="exportBtn">⇧　匯出 Excel</button></div></div><div class="searchbox"><span class="mag">⌕</span><input id="search" placeholder="搜尋賓客姓名..." autocomplete="off"><div class="search-results" id="searchResults"></div></div></section>
+<main class="workspace">
+<section class="panel checked"><div class="panel-head"><span>♟ 已報到賓客（<b id="checkedGroups">0</b>）</span><span>›</span></div><div class="columns"><span></span><span>姓名</span><span>桌次</span><span>人數</span><span>禮金</span><span>備註</span></div><div class="list" id="checkedList"></div></section>
+<section class="center"><div class="map-card"><div class="hall"><div class="stage">舞 台</div><div class="entrance"></div><div class="entrance-label">◀　入口</div><div class="tables" id="tables"></div></div></div><div class="form-card" id="formCard"><div class="form-title"><span id="selectedTitle">賓客</span><button onclick="closeForm()" style="border:0;background:none;font-size:20px">×</button></div><div class="form-grid"><div><div style="font-size:14px;color:#77675d">預計人數</div><div style="font-size:24px;margin-top:8px"><b id="expected">1</b> 人</div></div><div id="actualWrap"><div style="font-size:14px;color:#77675d">實際報到人數</div><div class="attendance"><div class="counter"><button class="roundbtn" onclick="changeActual(-1)">−</button><b id="actual" style="font-size:24px">1</b> 人<button class="roundbtn plus" onclick="changeActual(1)">＋</button></div></div><div class="single-note">預設為預計人數，只有實際到場人數不同時才需調整</div></div></div><div class="money-row"><div class="field"><label>禮金金額（元）</label><input id="gift" type="number" min="0" placeholder="請輸入金額"></div><label class="nogift"><input type="checkbox" id="noGift"> 無需禮金</label><div class="field"><label>備註（選填）</label><input id="note" placeholder="例如：朋友、公司同事、晚到..."></div></div><div class="actions"><button onclick="closeForm()">取消</button><button class="confirm" onclick="confirmCheckin()">確認報到</button></div></div></section>
+<section class="panel unchecked"><div class="panel-head"><span>♟ 未報到賓客（<b id="uncheckedGroups">0</b>）</span><div class="panel-head-actions"><button class="upload-btn" id="uploadBtn">⇧ 上傳檔案</button><input id="uploadFile" type="file" accept=".csv,text/csv" hidden><span>›</span></div></div><div class="columns"><span></span><span>姓名</span><span>桌次</span><span>預計人數</span><span>狀態</span></div><div class="list" id="uncheckedList"></div><div class="legend"><span><i class="dot" style="background:var(--gray)"></i>未報到</span><span><i class="dot" style="background:var(--gold)"></i>部分報到</span><span><i class="dot" style="background:var(--green)"></i>已報到</span></div></section>
+</main><div class="footer"><span>TWO HEARTS　ONE BEAUTIFUL DAY</span><span style="font-family:cursive;font-size:20px">Thank you for being here ♥</span></div></div><div class="toast" id="toast"></div>
+<script>
+const STORAGE_KEY='wedding_checkin_20261122_v1';
+const seedGuests=[
+{id:1,name:'王小美',table:3,expected:3},{id:2,name:'陳志明',table:4,expected:1},{id:3,name:'林家好',table:5,expected:1},{id:4,name:'黃俊傑',table:6,expected:2},{id:5,name:'劉品妍',table:8,expected:2},{id:6,name:'吳曼廷',table:9,expected:3},{id:7,name:'張雅筑',table:11,expected:1},{id:8,name:'李承翰',table:13,expected:2},{id:9,name:'蔡欣怡',table:14,expected:1},{id:10,name:'周子安',table:15,expected:2},{id:11,name:'洪瑞鵬',table:17,expected:1},{id:12,name:'許庭瑋',table:18,expected:1},{id:13,name:'邱詩芸',table:19,expected:2},{id:14,name:'賴建宏',table:20,expected:2},
+{id:15,name:'王大明',table:1,expected:2,actual:2,gift:6000,note:'',checked:true},{id:16,name:'李小華',table:3,expected:3,actual:3,gift:3200,note:'',checked:true},{id:17,name:'陳美玲',table:5,expected:1,actual:1,noGift:true,note:'',checked:true},{id:18,name:'張家豪',table:7,expected:2,actual:2,gift:3600,note:'',checked:true},{id:19,name:'林宜靜',table:7,expected:1,actual:1,gift:3600,note:'同事',checked:true},{id:20,name:'黃子翔',table:8,expected:2,actual:2,gift:2000,note:'',checked:true},{id:21,name:'吳佩珊',table:10,expected:1,actual:1,noGift:true,note:'',checked:true},{id:22,name:'劉志強',table:12,expected:3,actual:3,gift:6600,note:'',checked:true},{id:23,name:'蔡依琳',table:15,expected:2,actual:2,gift:3200,note:'',checked:true},{id:24,name:'周杰倫',table:16,expected:4,actual:4,gift:12000,note:'朋友',checked:true},{id:25,name:'楊千霈',table:18,expected:2,actual:2,gift:2600,note:'',checked:true},{id:26,name:'許書豪',table:20,expected:1,actual:1,gift:3000,note:'',checked:true},{id:27,name:'鄭雅文',table:21,expected:2,actual:2,gift:3600,note:'',checked:true},{id:28,name:'何冠廷',table:22,expected:1,actual:1,noGift:true,note:'',checked:true}
+];
+function cloneSeed(){return JSON.parse(JSON.stringify(seedGuests))}
+function loadGuests(){try{const saved=localStorage.getItem(STORAGE_KEY);if(saved){const data=JSON.parse(saved);if(Array.isArray(data)) return data}}catch(e){}return cloneSeed()}
+function saveGuests(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(guests));return true}catch(e){console.error('儲存失敗',e);toast('資料儲存失敗，請確認瀏覽器允許本機儲存');return false}}
+let guests=loadGuests(), selected=null, actual=1;
+const $=id=>document.getElementById(id);
+const giftEl=$('gift'), noGiftEl=$('noGift'), noteEl=$('note'), formCardEl=$('formCard');
+const positions=[1,2,4,6,8,10,11,3,5,7,9,14,16,18,20,22,12,13,15,17,19,21,23];
+const tablePos={1:[25.0,48.5],2:[29.7,11.3],4:[41.9,11.3],6:[54.1,11.3],8:[66.2,11.3],10:[78.4,11.3],11:[90.6,11.3],3:[35.8,30.0],5:[48.0,30.0],7:[59.2,30.0],9:[71.2,30.0],14:[35.8,61.9],16:[47.6,61.9],18:[59.3,61.9],20:[71.4,61.9],22:[83.4,61.9],12:[18.4,81.3],13:[29.8,81.3],15:[41.8,81.3],17:[53.8,81.3],19:[66.0,81.3],21:[78.2,81.3],23:[90.3,81.3]};
+function tableLabel(t){return t===1?'主桌':t+'桌'}
+function renderTables(){const el=$('tables');el.innerHTML='';positions.forEach(n=>{const d=document.createElement('div');d.className='table'+(n===1?' main':'');d.dataset.table=n;d.innerHTML=n===1?'<span><span class="main-number">1</span><br><span class="main-label">主桌</span></span>':n;const [x,y]=tablePos[n];d.style.left=x+'%';d.style.top=y+'%';el.appendChild(d)})}
+function render(){const checked=guests.filter(g=>g.checked),unchecked=guests.filter(g=>!g.checked);$('checkedList').innerHTML=checked.map(g=>{const partial=(g.actual||0)<g.expected;return `<div class="guest ${partial?'partial':''}" onclick="selectGuest(${g.id},true)"><span class="check">${partial?'◐':'✓'}</span><span>${g.name}</span><span>${tableLabel(g.table)}</span><span>${g.actual}/${g.expected}</span><span>${g.noGift?'無需禮金':Number(g.gift||0).toLocaleString()}</span><span>${g.note||'-'}</span></div>`}).join('');$('uncheckedList').innerHTML=unchecked.map(g=>`<div class="guest ${selected&&selected.id===g.id?'selected':''}" onclick="selectGuest(${g.id})"><span class="box"></span><span>${g.name}</span><span>${tableLabel(g.table)}</span><span>${g.expected}</span><span>未報到</span></div>`).join('');const total=guests.reduce((s,g)=>s+g.expected,0),arrived=checked.reduce((s,g)=>s+(g.actual||0),0),rate=total?Math.round(arrived/total*100):0;$('checkedCount').textContent=arrived;$('totalCount').textContent=total;$('uncheckedCount').textContent=(total-arrived)+' 人';$('checkedGroups').textContent=checked.length;$('uncheckedGroups').textContent=unchecked.length;$('rate').textContent=rate+'%';$('ringText').textContent=rate+'%';$('ring').style.setProperty('--pct',rate+'%')}
+function selectGuest(id,view=false){selected=guests.find(g=>g.id===id);if(!selected)return;document.querySelectorAll('.table').forEach(t=>t.classList.toggle('active',Number(t.dataset.table)===selected.table));$('selectedTitle').textContent=`${selected.name}${selected.expected>1?'（含攜伴'+(selected.expected-1)+'位）':''} ・ ${tableLabel(selected.table)}`;$('expected').textContent=selected.expected;actual=selected.checked?(selected.actual||selected.expected):selected.expected;$('actual').textContent=actual;$('actualWrap').style.display=selected.expected===1?'none':'block';giftEl.value=(selected.gift??'') || '';noGiftEl.checked=!!selected.noGift;giftEl.disabled=noGiftEl.checked;noteEl.value=selected.note||'';formCardEl.classList.add('open');render();if(view)toast('已載入此賓客報到資料')}
+function changeActual(v){if(!selected)return;actual=Math.max(0,Math.min(selected.expected,actual+v));$('actual').textContent=actual}
+function closeForm(){formCardEl.classList.remove('open');selected=null;document.querySelectorAll('.table').forEach(t=>t.classList.remove('active'));giftEl.disabled=false;render()}
+function confirmCheckin(){if(!selected)return;const amount=giftEl.value.trim();if(!amount&&!noGiftEl.checked){toast('請輸入禮金金額，或勾選「無需禮金」');giftEl.disabled=false;giftEl.focus();return}selected.checked=true;selected.actual=selected.expected===1?1:actual;selected.gift=amount?Number(amount):0;selected.noGift=noGiftEl.checked;selected.note=noteEl.value.trim();saveGuests();const name=selected.name;closeForm();toast(`${name} 已完成報到並自動儲存`)}
+function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.__toastTimer);window.__toastTimer=setTimeout(()=>t.classList.remove('show'),2000)}
+$('search').addEventListener('input',e=>{const q=e.target.value.trim(),r=$('searchResults');if(!q){r.style.display='none';return}const hits=guests.filter(g=>g.name.includes(q));r.innerHTML=hits.length?hits.map(g=>`<div onclick="selectGuest(${g.id});document.getElementById('search').value='';document.getElementById('searchResults').style.display='none'"><b>${g.name}</b>　${tableLabel(g.table)}　${g.checked?'已報到':'未報到'}</div>`).join(''):'<div>找不到符合的賓客</div>';r.style.display='block'});
+noGiftEl.addEventListener('change',()=>{giftEl.disabled=noGiftEl.checked;if(noGiftEl.checked)giftEl.value='';else setTimeout(()=>giftEl.focus(),0)});
+giftEl.addEventListener('input',()=>{if(giftEl.value){noGiftEl.checked=false;giftEl.disabled=false}});
+$('exportBtn').addEventListener('click',()=>{const rows=[['姓名','桌次','預計人數','實到人數','狀態','禮金','無需禮金','備註'],...guests.map(g=>[g.name,tableLabel(g.table),g.expected,g.checked?(g.actual||g.expected):0,g.checked?'已報到':'未報到',g.gift||'',g.noGift?'是':'否',g.note||''])];const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='2026-11-22_婚禮簽到名單.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('已匯出，可使用 Excel 開啟')});
+function parseCSV(text){
+  const rows=[];let row=[],cell='',quote=false;
+  for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'){if(quote&&text[i+1]==='"'){cell+='"';i++}else quote=!quote}else if(c===','&&!quote){row.push(cell.trim());cell=''}else if((c==='\n'||c==='\r')&&!quote){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell.trim());cell='';if(row.some(v=>v!==''))rows.push(row);row=[]}else cell+=c}
+  row.push(cell.trim());if(row.some(v=>v!==''))rows.push(row);return rows;
+}
+function normalizeUploadedGuests(rows){if(!rows.length)throw new Error('檔案沒有資料');const header=rows[0].map(x=>x.replace(/^\uFEFF/,'').trim());const find=(names)=>header.findIndex(h=>names.includes(h));const ni=find(['姓名','賓客姓名','名字']),ti=find(['桌次','桌號','桌']),ei=find(['預計人數','人數','出席人數','總人數']);if(ni<0||ti<0)throw new Error('CSV 至少需要「姓名」與「桌次」欄位');return rows.slice(1).filter(r=>r[ni]?.trim()).map((r,i)=>{const rawTable=(r[ti]||'').replace(/[^0-9]/g,'');const table=Number(rawTable);const expected=ei>=0?Math.max(1,Number((r[ei]||'1').replace(/[^0-9]/g,''))||1):1;if(!table||table<1||table>23)throw new Error(`第 ${i+2} 列桌次無效：${r[ti]||''}`);return {id:i+1,name:r[ni].trim(),table,expected,checked:false,actual:0,gift:0,noGift:false,note:''}})}
+$('uploadBtn').onclick=()=>$('uploadFile').click();
+$('uploadFile').addEventListener('change',async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;if(!/\.csv$/i.test(file.name)){toast('目前請上傳 CSV 檔');return}try{const imported=normalizeUploadedGuests(parseCSV(await file.text()));if(!imported.length)throw new Error('沒有可匯入的賓客');if(!confirm(`將以 ${imported.length} 筆新賓客資料覆蓋目前全部名單，且全部設為未報到。確定上傳？`))return;guests=imported;selected=null;formCardEl.classList.remove('open');saveGuests();render();toast(`已匯入 ${imported.length} 筆賓客，全部設為未報到`)}catch(err){alert('上傳失敗：'+err.message)}});
+renderTables();render();
+</script>
+</body></html>
