@@ -27,15 +27,43 @@
 <section class="panel unchecked"><div class="panel-head"><span>♟ 未報到賓客（<b id="uncheckedGroups">0</b>）</span><div class="panel-head-actions"><button class="upload-btn" id="uploadBtn">⇧ 上傳檔案</button><input id="uploadFile" type="file" accept=".csv,text/csv" hidden><span>›</span></div></div><div class="columns"><span></span><span>姓名</span><span>桌次</span><span>預計人數</span><span>狀態</span></div><div class="list" id="uncheckedList"></div><div class="legend"><span><i class="dot" style="background:var(--gray)"></i>未報到</span><span><i class="dot" style="background:var(--gold)"></i>部分報到</span><span><i class="dot" style="background:var(--green)"></i>已報到</span></div></section>
 </main><div class="footer"><span>TWO HEARTS　ONE BEAUTIFUL DAY</span><span style="font-family:cursive;font-size:20px">Thank you for being here ♥</span></div></div><div class="toast" id="toast"></div>
 <script>
-const STORAGE_KEY='wedding_checkin_20261122_v1';
+const CLOUD_API='/api/checkin';
 const seedGuests=[
 {id:1,name:'王小美',table:3,expected:3},{id:2,name:'陳志明',table:4,expected:1},{id:3,name:'林家好',table:5,expected:1},{id:4,name:'黃俊傑',table:6,expected:2},{id:5,name:'劉品妍',table:8,expected:2},{id:6,name:'吳曼廷',table:9,expected:3},{id:7,name:'張雅筑',table:11,expected:1},{id:8,name:'李承翰',table:13,expected:2},{id:9,name:'蔡欣怡',table:14,expected:1},{id:10,name:'周子安',table:15,expected:2},{id:11,name:'洪瑞鵬',table:17,expected:1},{id:12,name:'許庭瑋',table:18,expected:1},{id:13,name:'邱詩芸',table:19,expected:2},{id:14,name:'賴建宏',table:20,expected:2},
 {id:15,name:'王大明',table:1,expected:2,actual:2,gift:6000,note:'',checked:true},{id:16,name:'李小華',table:3,expected:3,actual:3,gift:3200,note:'',checked:true},{id:17,name:'陳美玲',table:5,expected:1,actual:1,noGift:true,note:'',checked:true},{id:18,name:'張家豪',table:7,expected:2,actual:2,gift:3600,note:'',checked:true},{id:19,name:'林宜靜',table:7,expected:1,actual:1,gift:3600,note:'同事',checked:true},{id:20,name:'黃子翔',table:8,expected:2,actual:2,gift:2000,note:'',checked:true},{id:21,name:'吳佩珊',table:10,expected:1,actual:1,noGift:true,note:'',checked:true},{id:22,name:'劉志強',table:12,expected:3,actual:3,gift:6600,note:'',checked:true},{id:23,name:'蔡依琳',table:15,expected:2,actual:2,gift:3200,note:'',checked:true},{id:24,name:'周杰倫',table:16,expected:4,actual:4,gift:12000,note:'朋友',checked:true},{id:25,name:'楊千霈',table:18,expected:2,actual:2,gift:2600,note:'',checked:true},{id:26,name:'許書豪',table:20,expected:1,actual:1,gift:3000,note:'',checked:true},{id:27,name:'鄭雅文',table:21,expected:2,actual:2,gift:3600,note:'',checked:true},{id:28,name:'何冠廷',table:22,expected:1,actual:1,noGift:true,note:'',checked:true}
 ];
 function cloneSeed(){return JSON.parse(JSON.stringify(seedGuests))}
-function loadGuests(){try{const saved=localStorage.getItem(STORAGE_KEY);if(saved){const data=JSON.parse(saved);if(Array.isArray(data)) return data}}catch(e){}return cloneSeed()}
-function saveGuests(){try{localStorage.setItem(STORAGE_KEY,JSON.stringify(guests));return true}catch(e){console.error('儲存失敗',e);toast('資料儲存失敗，請確認瀏覽器允許本機儲存');return false}}
-let guests=loadGuests(), selected=null, actual=1;
+let guests=cloneSeed(), selected=null, actual=1, syncing=false;
+
+async function apiRequest(body){
+  const options=body
+    ? {method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(body)}
+    : {cache:'no-store'};
+  const response=await fetch(CLOUD_API,options);
+  const data=await response.json().catch(()=>({}));
+  if(!response.ok)throw new Error(data.error||'雲端同步失敗');
+  return data;
+}
+async function loadCloudGuests(showError=false){
+  if(syncing||selected)return;
+  syncing=true;
+  try{
+    let data=await apiRequest();
+    if(!Array.isArray(data.guests)||data.guests.length===0){
+      data=await apiRequest({action:'init',guests:cloneSeed()});
+    }
+    if(Array.isArray(data.guests)){guests=data.guests;render()}
+  }catch(err){
+    console.error(err);
+    if(showError)toast('雲端同步失敗，請稍後再試');
+  }finally{syncing=false}
+}
+async function saveGuestCloud(guest){
+  return apiRequest({action:'upsert',guest});
+}
+async function replaceAllCloud(nextGuests){
+  return apiRequest({action:'replaceAll',guests:nextGuests});
+}
 const $=id=>document.getElementById(id);
 const giftEl=$('gift'), noGiftEl=$('noGift'), noteEl=$('note'), formCardEl=$('formCard');
 const positions=[1,2,4,6,8,10,11,3,5,7,9,14,16,18,20,22,12,13,15,17,19,21,23];
@@ -46,7 +74,41 @@ function render(){const checked=guests.filter(g=>g.checked),unchecked=guests.fil
 function selectGuest(id,view=false){selected=guests.find(g=>g.id===id);if(!selected)return;document.querySelectorAll('.table').forEach(t=>t.classList.toggle('active',Number(t.dataset.table)===selected.table));$('selectedTitle').textContent=`${selected.name}${selected.expected>1?'（含攜伴'+(selected.expected-1)+'位）':''} ・ ${tableLabel(selected.table)}`;$('expected').textContent=selected.expected;actual=selected.checked?(selected.actual||selected.expected):selected.expected;$('actual').textContent=actual;$('actualWrap').style.display=selected.expected===1?'none':'block';giftEl.value=(selected.gift??'') || '';noGiftEl.checked=!!selected.noGift;giftEl.disabled=noGiftEl.checked;noteEl.value=selected.note||'';formCardEl.classList.add('open');render();if(view)toast('已載入此賓客報到資料')}
 function changeActual(v){if(!selected)return;actual=Math.max(0,Math.min(selected.expected,actual+v));$('actual').textContent=actual}
 function closeForm(){formCardEl.classList.remove('open');selected=null;document.querySelectorAll('.table').forEach(t=>t.classList.remove('active'));giftEl.disabled=false;render()}
-function confirmCheckin(){if(!selected)return;const amount=giftEl.value.trim();if(!amount&&!noGiftEl.checked){toast('請輸入禮金金額，或勾選「無需禮金」');giftEl.disabled=false;giftEl.focus();return}selected.checked=true;selected.actual=selected.expected===1?1:actual;selected.gift=amount?Number(amount):0;selected.noGift=noGiftEl.checked;selected.note=noteEl.value.trim();saveGuests();const name=selected.name;closeForm();toast(`${name} 已完成報到並自動儲存`)}
+async function confirmCheckin(){
+  if(!selected)return;
+  const amount=giftEl.value.trim();
+  if(!amount&&!noGiftEl.checked){
+    toast('請輸入禮金金額，或勾選「無需禮金」');
+    giftEl.disabled=false;
+    giftEl.focus();
+    return;
+  }
+
+  const target=guests.find(g=>g.id===selected.id);
+  if(!target)return;
+
+  const original=JSON.parse(JSON.stringify(target));
+  target.checked=true;
+  target.actual=target.expected===1?1:actual;
+  target.gift=amount?Number(amount):0;
+  target.noGift=noGiftEl.checked;
+  target.note=noteEl.value.trim();
+
+  const name=target.name;
+  render();
+
+  try{
+    await saveGuestCloud(target);
+    closeForm();
+    toast(`${name} 已完成報到並同步到雲端`);
+    setTimeout(()=>loadCloudGuests(),250);
+  }catch(err){
+    Object.assign(target,original);
+    render();
+    console.error(err);
+    toast('報到儲存失敗，請再試一次');
+  }
+}
 function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show');clearTimeout(window.__toastTimer);window.__toastTimer=setTimeout(()=>t.classList.remove('show'),2000)}
 $('search').addEventListener('input',e=>{const q=e.target.value.trim(),r=$('searchResults');if(!q){r.style.display='none';return}const hits=guests.filter(g=>g.name.includes(q));r.innerHTML=hits.length?hits.map(g=>`<div onclick="selectGuest(${g.id});document.getElementById('search').value='';document.getElementById('searchResults').style.display='none'"><b>${g.name}</b>　${tableLabel(g.table)}　${g.checked?'已報到':'未報到'}</div>`).join(''):'<div>找不到符合的賓客</div>';r.style.display='block'});
 noGiftEl.addEventListener('change',()=>{giftEl.disabled=noGiftEl.checked;if(noGiftEl.checked)giftEl.value='';else setTimeout(()=>giftEl.focus(),0)});
@@ -59,7 +121,30 @@ function parseCSV(text){
 }
 function normalizeUploadedGuests(rows){if(!rows.length)throw new Error('檔案沒有資料');const header=rows[0].map(x=>x.replace(/^\uFEFF/,'').trim());const find=(names)=>header.findIndex(h=>names.includes(h));const ni=find(['姓名','賓客姓名','名字']),ti=find(['桌次','桌號','桌']),ei=find(['預計人數','人數','出席人數','總人數']);if(ni<0||ti<0)throw new Error('CSV 至少需要「姓名」與「桌次」欄位');return rows.slice(1).filter(r=>r[ni]?.trim()).map((r,i)=>{const rawTable=(r[ti]||'').replace(/[^0-9]/g,'');const table=Number(rawTable);const expected=ei>=0?Math.max(1,Number((r[ei]||'1').replace(/[^0-9]/g,''))||1):1;if(!table||table<1||table>23)throw new Error(`第 ${i+2} 列桌次無效：${r[ti]||''}`);return {id:i+1,name:r[ni].trim(),table,expected,checked:false,actual:0,gift:0,noGift:false,note:''}})}
 $('uploadBtn').onclick=()=>$('uploadFile').click();
-$('uploadFile').addEventListener('change',async e=>{const file=e.target.files[0];e.target.value='';if(!file)return;if(!/\.csv$/i.test(file.name)){toast('目前請上傳 CSV 檔');return}try{const imported=normalizeUploadedGuests(parseCSV(await file.text()));if(!imported.length)throw new Error('沒有可匯入的賓客');if(!confirm(`將以 ${imported.length} 筆新賓客資料覆蓋目前全部名單，且全部設為未報到。確定上傳？`))return;guests=imported;selected=null;formCardEl.classList.remove('open');saveGuests();render();toast(`已匯入 ${imported.length} 筆賓客，全部設為未報到`)}catch(err){alert('上傳失敗：'+err.message)}});
-renderTables();render();
+$('uploadFile').addEventListener('change',async e=>{
+  const file=e.target.files[0];
+  e.target.value='';
+  if(!file)return;
+  if(!/\.csv$/i.test(file.name)){toast('目前請上傳 CSV 檔');return}
+  try{
+    const imported=normalizeUploadedGuests(parseCSV(await file.text()));
+    if(!imported.length)throw new Error('沒有可匯入的賓客');
+    if(!confirm(`將以 ${imported.length} 筆新賓客資料覆蓋目前全部名單，且全部設為未報到。確定上傳？`))return;
+    await replaceAllCloud(imported);
+    guests=imported;
+    selected=null;
+    formCardEl.classList.remove('open');
+    render();
+    toast(`已匯入 ${imported.length} 筆賓客並同步到所有裝置`);
+  }catch(err){
+    alert('上傳失敗：'+err.message);
+  }
+});
+renderTables();
+render();
+loadCloudGuests(true);
+setInterval(()=>loadCloudGuests(),2500);
+window.addEventListener('focus',()=>loadCloudGuests());
+document.addEventListener('visibilitychange',()=>{if(!document.hidden)loadCloudGuests()});
 </script>
 </body></html>
