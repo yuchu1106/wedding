@@ -1,8 +1,9 @@
 {
-  "name": "shared-todo-list",
+  "name": "wedding-checkin",
   "private": true,
   "version": "1.0.0",
   "dependencies": {
-    "@upstash/redis": "^1.35.3"
+    "@upstash/redis": "^1.35.3",
+    "redis": "^5.8.2"
   }
 }
