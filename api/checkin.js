@@ -11,6 +11,7 @@ const redisToken =
   process.env.KV_REST_API_READ_ONLY_TOKEN;
 
 const GUESTS_KEY = 'wedding_checkin_guests_v2';
+// Redeploy marker after Redis storage connection
 
 function getRedis() {
   if (!redisUrl || !redisToken) {
