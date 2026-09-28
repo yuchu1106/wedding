@@ -1,29 +1,24 @@
-import { Redis } from '@upstash/redis';
-
-const redisUrl =
-  process.env.UPSTASH_REDIS_REST_URL ||
-  process.env.KV_REST_API_URL ||
-  process.env.KV_URL;
-
-const redisToken =
-  process.env.UPSTASH_REDIS_REST_TOKEN ||
-  process.env.KV_REST_API_TOKEN ||
-  process.env.KV_REST_API_READ_ONLY_TOKEN;
+import { createClient } from 'redis';
 
 const GUESTS_KEY = 'wedding_checkin_guests_v2';
-// Redeploy marker after Redis storage connection
 
-function getRedis() {
-  if (!redisUrl || !redisToken) {
-    throw new Error(
-      'REDIS_ENV_MISSING: 請確認 Vercel 專案已注入 UPSTASH_REDIS_REST_URL / UPSTASH_REDIS_REST_TOKEN，或 KV_REST_API_URL / KV_REST_API_TOKEN'
-    );
+let clientPromise;
+
+async function getRedis() {
+  const url = process.env.REDIS_URL;
+  if (!url) {
+    throw new Error('REDIS_ENV_MISSING: Vercel 尚未提供 REDIS_URL');
   }
 
-  return new Redis({
-    url: redisUrl,
-    token: redisToken,
-  });
+  if (!clientPromise) {
+    const client = createClient({ url });
+    client.on('error', (err) => {
+      console.error('Redis client error:', err);
+    });
+    clientPromise = client.connect().then(() => client);
+  }
+
+  return clientPromise;
 }
 
 function normalizeGuest(guest) {
@@ -49,13 +44,18 @@ function normalizeGuestList(guests) {
 }
 
 async function readGuests(redis) {
-  const value = await redis.get(GUESTS_KEY);
-  return normalizeGuestList(Array.isArray(value) ? value : []);
+  const raw = await redis.get(GUESTS_KEY);
+  if (!raw) return [];
+  try {
+    return normalizeGuestList(JSON.parse(raw));
+  } catch {
+    return [];
+  }
 }
 
 async function writeGuests(redis, guests) {
   const normalized = normalizeGuestList(guests);
-  await redis.set(GUESTS_KEY, normalized);
+  await redis.set(GUESTS_KEY, JSON.stringify(normalized));
   return normalized;
 }
 
@@ -63,7 +63,7 @@ export default async function handler(req, res) {
   res.setHeader('Cache-Control', 'no-store, no-cache, must-revalidate');
 
   try {
-    const redis = getRedis();
+    const redis = await getRedis();
 
     if (req.method === 'GET') {
       const guests = await readGuests(redis);
@@ -125,12 +125,10 @@ export default async function handler(req, res) {
     const isEnvError = message.includes('REDIS_ENV_MISSING');
 
     return res.status(500).json({
-      error: isEnvError
-        ? 'Vercel 找不到 Upstash Redis 環境變數'
-        : '雲端同步失敗',
+      error: isEnvError ? 'Vercel 找不到 REDIS_URL' : '雲端同步失敗',
       detail: isEnvError
-        ? message.replace('REDIS_ENV_MISSING: ', '')
-        : '請查看 Vercel Function Logs 的 /api/checkin 錯誤訊息',
+        ? '請確認 Vercel Storage 已連到 wedding 專案，並且 REDIS_URL 套用到 Production'
+        : message,
     });
   }
 }
