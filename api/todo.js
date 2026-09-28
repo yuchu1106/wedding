@@ -6,18 +6,26 @@ const TODO_KEY = 'shared_todos_v1';
 export default async function handler(req, res) {
   try {
     if (req.method === 'GET') {
-      const todos = (await redis.get(TODO_KEY)) || [];
+      const storedTodos = await redis.get(TODO_KEY);
+      const todos = Array.isArray(storedTodos) ? storedTodos : [];
+
+      res.setHeader('Cache-Control', 'no-store');
       return res.status(200).json({ todos });
     }
 
     if (req.method === 'POST') {
-      const text = typeof req.body?.text === 'string' ? req.body.text.trim() : '';
+      const text =
+        typeof req.body?.text === 'string'
+          ? req.body.text.trim()
+          : '';
 
       if (!text) {
         return res.status(400).json({ error: '請輸入待辦事項' });
       }
 
-      const todos = (await redis.get(TODO_KEY)) || [];
+      const storedTodos = await redis.get(TODO_KEY);
+      const todos = Array.isArray(storedTodos) ? storedTodos : [];
+
       const todo = {
         id: crypto.randomUUID(),
         text,
@@ -27,7 +35,10 @@ export default async function handler(req, res) {
       const nextTodos = [todo, ...todos];
       await redis.set(TODO_KEY, nextTodos);
 
-      return res.status(201).json({ todo, todos: nextTodos });
+      return res.status(201).json({
+        todo,
+        todos: nextTodos,
+      });
     }
 
     res.setHeader('Allow', ['GET', 'POST']);
