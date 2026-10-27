@@ -28,6 +28,7 @@
 }
 @media(max-width:650px){.hero{height:72px}.title h1{font-size:22px;letter-spacing:1px}.title p{font-size:9px;letter-spacing:2px}.stats{height:auto;padding:12px;grid-template-columns:1fr 1fr}.stat{border-right:0;border-bottom:1px solid #eee;padding:8px}.export{margin:8px;grid-column:1/-1}.workspace{display:flex;flex-direction:column}.center{order:-2}.map-card{height:360px;overflow:auto}.hall{min-width:650px}.form-grid,.money-row{grid-template-columns:1fr}.actions{grid-template-columns:1fr}.panel{height:390px}.searchbox{height:78px;padding:14px}.searchbox .mag{top:29px}.search-results{top:68px}.brand{display:none}}
 </style>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 </head>
 <body>
 <div class="page">
@@ -36,7 +37,7 @@
 <main class="workspace">
 <section class="panel checked"><div class="panel-head"><span>♟ 已報到賓客（<b id="checkedGroups">0</b>）</span></div><div class="columns"><span></span><span>姓名</span><span>桌次</span><span>人數</span><span>禮金</span><span>備註</span></div><div class="list" id="checkedList"></div></section>
 <section class="center"><div class="map-card"><div class="hall"><div class="stage">舞 台</div><div class="entrance"></div><div class="entrance-label">◀　入口</div><div class="tables" id="tables"></div></div></div><div class="form-card" id="formCard"><div class="form-title"><span id="selectedTitle">賓客</span><button onclick="closeForm()" style="border:0;background:none;font-size:20px">×</button></div><div class="form-grid"><div><div style="font-size:14px;color:#77675d">預計人數</div><div style="font-size:24px;margin-top:8px"><b id="expected">1</b> 人</div></div><div id="actualWrap"><div style="font-size:14px;color:#77675d">實際報到人數</div><div class="attendance"><div class="counter"><button class="roundbtn" onclick="changeActual(-1)">−</button><b id="actual" style="font-size:24px">1</b> 人<button class="roundbtn plus" onclick="changeActual(1)">＋</button></div></div><div class="single-note">預設為預計人數，只有實際到場人數不同時才需調整</div></div></div><div class="money-row"><div class="field"><label>禮金金額（元）</label><input id="gift" type="text" inputmode="numeric" pattern="[0-9]*" autocomplete="off" placeholder="請輸入金額"></div><label class="nogift"><input type="checkbox" id="noGift"> 無需禮金</label><div class="field"><label>備註（選填）</label><input id="note" placeholder="例如：朋友、公司同事、晚到..."></div></div><div class="actions"><button onclick="closeForm()">取消</button><button class="confirm" onclick="confirmCheckin()">確認報到</button></div></div></section>
-<section class="panel unchecked"><div class="panel-head"><span>♟ 未報到賓客（<b id="uncheckedGroups">0</b>）</span><div class="panel-head-actions"><button class="upload-btn" id="uploadBtn">上傳檔案</button><input id="uploadFile" type="file" accept=".csv,text/csv" hidden></div></div><div class="columns"><span></span><span>姓名</span><span>桌次</span><span>預計人數</span><span>狀態</span></div><div class="list" id="uncheckedList"></div><div class="legend"><span><i class="dot" style="background:var(--gray)"></i>未報到</span><span><i class="dot" style="background:var(--gold)"></i>部分報到</span><span><i class="dot" style="background:var(--green)"></i>已報到</span></div></section>
+<section class="panel unchecked"><div class="panel-head"><span>♟ 未報到賓客（<b id="uncheckedGroups">0</b>）</span><div class="panel-head-actions"><button class="upload-btn" id="uploadBtn">上傳檔案</button><input id="uploadFile" type="file" accept=".xlsx,.xls,.csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel,text/csv" hidden></div></div><div class="columns"><span></span><span>姓名</span><span>桌次</span><span>預計人數</span><span>狀態</span></div><div class="list" id="uncheckedList"></div><div class="legend"><span><i class="dot" style="background:var(--gray)"></i>未報到</span><span><i class="dot" style="background:var(--gold)"></i>部分報到</span><span><i class="dot" style="background:var(--green)"></i>已報到</span></div></section>
 </main><div class="footer"><span>TWO HEARTS　ONE BEAUTIFUL DAY</span><span style="font-family:cursive;font-size:20px">Thank you for being here ♥</span></div></div>
 <div class="table-modal" id="tableModal" onclick="if(event.target===this)closeTableModal()">
   <div class="table-modal-card">
@@ -158,21 +159,23 @@ function toast(msg){const t=$('toast');t.textContent=msg;t.classList.add('show')
 $('search').addEventListener('input',e=>{const q=e.target.value.trim(),r=$('searchResults');if(!q){r.style.display='none';return}const hits=guests.filter(g=>g.name.includes(q));r.innerHTML=hits.length?hits.map(g=>`<div onclick="selectGuest(${g.id});document.getElementById('search').value='';document.getElementById('searchResults').style.display='none'"><b>${g.name}</b>　${tableLabel(g.table)}　${g.checked?'已報到':'未報到'}</div>`).join(''):'<div>找不到符合的賓客</div>';r.style.display='block'});
 noGiftEl.addEventListener('change',()=>{giftEl.disabled=noGiftEl.checked;if(noGiftEl.checked)giftEl.value='';else setTimeout(()=>giftEl.focus(),0)});
 giftEl.addEventListener('input',()=>{giftEl.value=giftEl.value.replace(/\D/g,'');if(giftEl.value){noGiftEl.checked=false;giftEl.disabled=false}});
-$('exportBtn').addEventListener('click',()=>{const rows=[['姓名','桌次','預計人數','實到人數','狀態','禮金','無需禮金','備註'],...guests.map(g=>[g.name,tableLabel(g.table),g.expected,g.checked?(g.actual||g.expected):0,g.checked?'已報到':'未報到',g.gift||'',g.noGift?'是':'否',g.note||''])];const csv='\uFEFF'+rows.map(r=>r.map(v=>'"'+String(v).replaceAll('"','""')+'"').join(',')).join('\n');const blob=new Blob([csv],{type:'text/csv;charset=utf-8'}),a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='2026-11-22_婚禮簽到名單.csv';a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000);toast('已匯出，可使用 Excel 開啟')});
+$('exportBtn').addEventListener('click',()=>{if(typeof XLSX==='undefined'){toast('Excel 模組載入失敗，請重新整理後再試');return}const rows=[['姓名','桌次','預計人數','實到人數','狀態','禮金','無需禮金','備註'],...guests.map(g=>[g.name,tableLabel(g.table),g.expected,g.checked?(g.actual||g.expected):0,g.checked?'已報到':'未報到',g.gift||'',g.noGift?'是':'否',g.note||''])];const ws=XLSX.utils.aoa_to_sheet(rows);ws['!cols']=[{wch:16},{wch:10},{wch:10},{wch:10},{wch:10},{wch:12},{wch:10},{wch:24}];const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,'婚禮簽到名單');XLSX.writeFile(wb,'2026-11-22_婚禮簽到名單.xlsx');toast('已匯出 Excel 檔')});
 function parseCSV(text){
   const rows=[];let row=[],cell='',quote=false;
   for(let i=0;i<text.length;i++){const c=text[i];if(c==='"'){if(quote&&text[i+1]==='"'){cell+='"';i++}else quote=!quote}else if(c===','&&!quote){row.push(cell.trim());cell=''}else if((c==='\n'||c==='\r')&&!quote){if(c==='\r'&&text[i+1]==='\n')i++;row.push(cell.trim());cell='';if(row.some(v=>v!==''))rows.push(row);row=[]}else cell+=c}
   row.push(cell.trim());if(row.some(v=>v!==''))rows.push(row);return rows;
 }
+async function parseExcelFile(file){if(typeof XLSX==='undefined')throw new Error('Excel 模組載入失敗，請重新整理後再試');const data=await file.arrayBuffer();const workbook=XLSX.read(data,{type:'array'});const sheet=workbook.Sheets[workbook.SheetNames[0]];if(!sheet)throw new Error('Excel 檔沒有工作表');return XLSX.utils.sheet_to_json(sheet,{header:1,defval:'',raw:false}).map(row=>row.map(v=>String(v).trim())).filter(row=>row.some(v=>v!==''))}
 function normalizeUploadedGuests(rows){if(!rows.length)throw new Error('檔案沒有資料');const header=rows[0].map(x=>x.replace(/^\uFEFF/,'').trim());const find=(names)=>header.findIndex(h=>names.includes(h));const ni=find(['姓名','賓客姓名','名字']),ti=find(['桌次','桌號','桌']),ei=find(['預計人數','人數','出席人數','總人數']);if(ni<0||ti<0)throw new Error('CSV 至少需要「姓名」與「桌次」欄位');return rows.slice(1).filter(r=>r[ni]?.trim()).map((r,i)=>{const rawTable=(r[ti]||'').replace(/[^0-9]/g,'');const table=Number(rawTable);const expected=ei>=0?Math.max(1,Number((r[ei]||'1').replace(/[^0-9]/g,''))||1):1;if(!table||table<1||table>23)throw new Error(`第 ${i+2} 列桌次無效：${r[ti]||''}`);return {id:i+1,name:r[ni].trim(),table,expected,checked:false,actual:0,gift:0,noGift:false,note:''}})}
 $('uploadBtn').onclick=()=>$('uploadFile').click();
 $('uploadFile').addEventListener('change',async e=>{
   const file=e.target.files[0];
   e.target.value='';
   if(!file)return;
-  if(!/\.csv$/i.test(file.name)){toast('目前請上傳 CSV 檔');return}
+  if(!/\.(csv|xlsx|xls)$/i.test(file.name)){toast('請上傳 XLSX、XLS 或 CSV 檔');return}
   try{
-    const imported=normalizeUploadedGuests(parseCSV(await file.text()));
+    const rows=/\.csv$/i.test(file.name)?parseCSV(await file.text()):await parseExcelFile(file);
+    const imported=normalizeUploadedGuests(rows);
     if(!imported.length)throw new Error('沒有可匯入的賓客');
     if(!confirm(`將以 ${imported.length} 筆新賓客資料覆蓋目前全部名單，且全部設為未報到。確定上傳？`))return;
     await replaceAllCloud(imported);
